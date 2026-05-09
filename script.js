@@ -411,7 +411,6 @@ async function initData() {
 
 function renderAll() {
   renderFilters();
-  renderStats();
   renderIssues();
 }
 
@@ -453,25 +452,6 @@ function renderFilters() {
     .join("");
 }
 
-function renderStats() {
-  document.querySelector("#issueCount").textContent = weeklyIssues.length;
-  document.querySelector("#articleCount").textContent = allArticles.length;
-  document.querySelector("#downloadCount").textContent = weeklyIssues.length;
-
-  const tagCounts = allArticles
-    .flatMap((article) => article.tags)
-    .reduce((acc, tag) => {
-      acc[tag] = (acc[tag] || 0) + 1;
-      return acc;
-    }, {});
-
-  document.querySelector("#tagCloud").innerHTML = Object.entries(tagCounts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 12)
-    .map(([tag, count]) => `<button class="tag" type="button" data-keyword="${tag}">${tag} ${count}</button>`)
-    .join("");
-}
-
 function renderIssues() {
   if (state.selectedIssueVolume) {
     renderIssueDetail(state.selectedIssueVolume);
@@ -506,7 +486,7 @@ function renderIssueSummaryCard(issue) {
         <p>수록 글 <strong>${issue.articles.length}편</strong> - ${previewTitles}</p>
       </button>
       <div class="issue-tools">
-        <a class="outline-action" href="${issue.pdf}" target="_blank" rel="noreferrer">전체 PDF 다운로드</a>
+        <a class="outline-action" href="${issue.pdf}" target="_blank" rel="noreferrer">다운로드</a>
         <button class="outline-action" type="button" data-preview-pdf="${issue.previewPdf || issue.pdf}" data-preview-title="SRI Weekly 제${issue.volume}호">미리보기</button>
       </div>
     </article>
@@ -523,7 +503,6 @@ function renderIssueDetail(volume) {
     <article class="issue-detail-card">
       <div class="detail-head">
         <button class="back-button" type="button" data-back-to-issues>← 전체 호수</button>
-        <a class="outline-action compact" href="${issue.pdf}" target="_blank" rel="noreferrer">원문 PDF</a>
       </div>
       <div class="issue-detail-top">
         ${renderCover(issue)}
@@ -593,7 +572,7 @@ function openArticle(articleId) {
       <div class="article-pdf-actions">
         ${
           article.pdf
-            ? `<a class="download-link inline-download" href="${article.pdf}" target="_blank" rel="noreferrer">개별 PDF 다운로드</a>`
+            ? `<a class="download-link inline-download" href="${article.pdf}" target="_blank" rel="noreferrer">다운로드</a>`
             : `<span class="download-link inline-download disabled-link">개별 PDF 준비중</span>`
         }
         ${
@@ -698,15 +677,6 @@ topicFilters.addEventListener("click", (event) => {
   state.topic = button.dataset.topic;
   state.selectedIssueVolume = null;
   renderFilters();
-  renderIssues();
-});
-
-document.querySelector("#tagCloud").addEventListener("click", (event) => {
-  const button = event.target.closest("[data-keyword]");
-  if (!button) return;
-  state.query = button.dataset.keyword;
-  state.selectedIssueVolume = null;
-  searchInput.value = state.query;
   renderIssues();
 });
 
