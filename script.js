@@ -325,7 +325,7 @@ async function loadWeeklyIssuesFromSheets() {
         summary: row.summary || "요약 정보는 준비 중입니다.",
         body: row.body || row.summary || "본문 요약은 준비 중입니다.",
         pdf: row.article_pdf_download_url || row.article_pdf_preview_url || "",
-        previewPdf: row.article_pdf_preview_url || "",
+        previewPdf: toDriveViewUrl(row.article_pdf_preview_url || row.article_pdf_download_url),
       });
       return grouped;
     }, {});
@@ -347,7 +347,7 @@ async function loadWeeklyIssuesFromSheets() {
         title: articles.map((article) => article.title).join(" / ") || `SRI Weekly 제${volume}호`,
         topics,
         pdf: row.full_pdf_download_url || row.full_pdf_view_url || "",
-        previewPdf: row.full_pdf_preview_url || row.full_pdf_view_url || "",
+        previewPdf: toDriveViewUrl(row.full_pdf_preview_url || row.full_pdf_view_url || row.full_pdf_download_url),
         articles,
       };
     })
@@ -371,6 +371,16 @@ function splitList(value) {
 function articleOrder(id) {
   const match = String(id).match(/-(\d+)$/);
   return match ? Number(match[1]) : 999;
+}
+
+function extractDriveFileId(url) {
+  const value = String(url || "");
+  return value.match(/\/file\/d\/([^/]+)/)?.[1] || value.match(/[?&]id=([^&]+)/)?.[1] || "";
+}
+
+function toDriveViewUrl(url) {
+  const fileId = extractDriveFileId(url);
+  return fileId ? `https://drive.google.com/file/d/${fileId}/view?usp=sharing` : url;
 }
 
 async function initData() {
