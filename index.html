@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SRI Weekly 온라인 아카이브</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#home" aria-label="SRI Weekly 홈">
+        <span class="brand-mark">SRI</span>
+        <span>
+          <strong>SRI Weekly</strong>
+          <small>수원시정연구원 주간 정책 아카이브</small>
+        </span>
+      </a>
+      <nav class="nav" aria-label="주요 메뉴">
+        <a href="#archive">아카이브</a>
+        <a href="#topics">주제</a>
+        <a href="#newsletter">구독</a>
+      </nav>
+    </header>
+
+    <main id="home">
+      <section class="hero">
+        <div class="hero-copy">
+          <span class="hero-badge">Weekly Issue</span>
+          <h1>SRI Weekly</h1>
+          <p>SRI Weekly는 수원시정연구원이 매주 발행하는 정책 리포트로, 수원의 주요 현안과 도시 문제에 대한 데이터 기반 분석과 실효성 있는 정책 대안을 시민과 행정가들에게 신속하게 전달합니다.</p>
+          <div class="hero-actions">
+            <a class="primary-action" href="#archive">최신호 보기</a>
+            <button class="ghost-action" id="openLatestIssue" type="button">147호 수록 글 보기</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="toolbar" id="archive" aria-label="자료 검색과 필터">
+        <div class="search-wrap">
+          <span aria-hidden="true">⌕</span>
+          <input id="searchInput" type="search" placeholder="제목, 요약, 키워드 검색" autocomplete="off" />
+        </div>
+        <div class="filters" id="topicFilters" aria-label="주제 필터"></div>
+      </section>
+
+      <section class="archive-layout">
+        <aside class="side-panel" id="topics">
+          <h2>발행 현황</h2>
+          <div class="metric-list">
+            <p><strong id="issueCount">0</strong><span>등록 권호</span></p>
+            <p><strong id="articleCount">0</strong><span>개별 글</span></p>
+            <p><strong id="downloadCount">0</strong><span>다운로드 가능</span></p>
+          </div>
+          <h3>많이 연결된 키워드</h3>
+          <div class="tag-cloud" id="tagCloud"></div>
+          <p class="data-source-note" id="dataSourceNote">Google Sheets 연결 확인 중</p>
+        </aside>
+
+        <section class="results" aria-live="polite">
+          <div class="results-head">
+            <div>
+              <p class="eyebrow">Archive</p>
+              <h2>전체 SRI Weekly</h2>
+            </div>
+            <p id="resultCount"></p>
+          </div>
+          <div id="issueList" class="issue-list"></div>
+        </section>
+      </section>
+
+      <section class="newsletter" id="newsletter">
+        <div>
+          <p class="eyebrow">Distribution</p>
+          <h2>인쇄 배포에서 온라인 배포로</h2>
+          <p>권호별 PDF, 개별 글, 주제 필터, 연관 글 추천을 한 번에 관리하는 구조로 확장할 수 있습니다.</p>
+        </div>
+        <form class="subscribe-form">
+          <input type="email" placeholder="email@suwon.re.kr" aria-label="이메일" />
+          <button type="button">알림 신청</button>
+        </form>
+      </section>
+    </main>
+
+    <dialog id="articleDialog" class="article-dialog">
+      <article>
+        <button class="close-button" id="closeDialog" type="button" aria-label="닫기">×</button>
+        <div id="articleDetail"></div>
+      </article>
+    </dialog>
+
+    <script src="./script.js"></script>
+  </body>
+</html>
