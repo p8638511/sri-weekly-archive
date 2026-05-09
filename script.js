@@ -214,9 +214,6 @@ const DATA_SOURCE = {
   articlesSheet: "articles",
 };
 
-const ARTICLE_CHUNK_SIZE = 25;
-const ARTICLE_WEB_QUERY_COLUMNS = "A,C,E,F,G,H,J,K,L,M,N,Q";
-
 let weeklyIssues = fallbackWeeklyIssues;
 let allArticles = buildAllArticles(weeklyIssues);
 
@@ -257,13 +254,12 @@ function unique(items) {
   return [...new Set(items.filter(Boolean))];
 }
 
-function sheetJsonpUrl(sheetName, callbackName, query = "select *") {
-  const encodedQuery = encodeURIComponent(query);
-  const cacheBust = Date.now();
-  return `https://docs.google.com/spreadsheets/d/${DATA_SOURCE.spreadsheetId}/gviz/tq?tqx=responseHandler:${callbackName}&sheet=${encodeURIComponent(sheetName)}&tq=${encodedQuery}&cacheBust=${cacheBust}`;
+function sheetJsonpUrl(sheetName, callbackName) {
+  const query = encodeURIComponent("select *");
+  return `https://docs.google.com/spreadsheets/d/${DATA_SOURCE.spreadsheetId}/gviz/tq?tqx=responseHandler:${callbackName}&sheet=${encodeURIComponent(sheetName)}&tq=${query}`;
 }
 
-function loadSheetRows(sheetName, query = "select *") {
+function loadSheetRows(sheetName) {
   return new Promise((resolve, reject) => {
     const callbackName = `sriSheetCallback_${sheetName}_${Date.now()}_${Math.random().toString(36).slice(2)}`;
     const script = document.createElement("script");
@@ -292,30 +288,9 @@ function loadSheetRows(sheetName, query = "select *") {
       reject(new Error(`${sheetName} 시트 스크립트 로드에 실패했습니다.`));
     };
 
-    script.src = sheetJsonpUrl(sheetName, callbackName, query);
+    script.src = sheetJsonpUrl(sheetName, callbackName);
     document.head.appendChild(script);
   });
-}
-
-async function loadArticleRows() {
-  const rows = [];
-
-  try {
-    for (let offset = 0; ; offset += ARTICLE_CHUNK_SIZE) {
-      const chunk = await loadSheetRows(
-        DATA_SOURCE.articlesSheet,
-        `select ${ARTICLE_WEB_QUERY_COLUMNS} limit ${ARTICLE_CHUNK_SIZE} offset ${offset}`,
-      );
-      rows.push(...chunk);
-
-      if (chunk.length < ARTICLE_CHUNK_SIZE) break;
-    }
-
-    return rows;
-  } catch (error) {
-    console.info("articles 시트 조각 읽기에 실패해 전체 읽기로 다시 시도합니다.", error);
-    return loadSheetRows(DATA_SOURCE.articlesSheet, `select ${ARTICLE_WEB_QUERY_COLUMNS}`);
-  }
 }
 
 function tableToObjects(table) {
@@ -335,7 +310,10 @@ function setDataSourceNote(message) {
 }
 
 async function loadWeeklyIssuesFromSheets() {
-  const [issueRows, articleRows] = await Promise.all([loadSheetRows(DATA_SOURCE.issuesSheet), loadArticleRows()]);
+  const [issueRows, articleRows] = await Promise.all([
+    loadSheetRows(DATA_SOURCE.issuesSheet),
+    loadSheetRows(DATA_SOURCE.articlesSheet),
+  ]);
 
   const articlesByIssue = articleRows
     .filter((row) => row.status !== "hidden" && row.issue_no && row.article_title)
@@ -378,6 +356,7 @@ async function loadWeeklyIssuesFromSheets() {
         articles,
       };
     })
+    .filter((issue) => issue.articles.length)
     .sort((a, b) => b.volume - a.volume);
 
   if (!issues.length) {
