@@ -244,6 +244,9 @@ const searchInput = document.querySelector("#searchInput");
 const articleDialog = document.querySelector("#articleDialog");
 const articleDetail = document.querySelector("#articleDetail");
 const dataSourceNote = document.querySelector("#dataSourceNote");
+const pdfPreviewDialog = document.querySelector("#pdfPreviewDialog");
+const pdfPreviewFrame = document.querySelector("#pdfPreviewFrame");
+const pdfPreviewTitle = document.querySelector("#pdfPreviewTitle");
 
 function unique(items) {
   return [...new Set(items.filter(Boolean))];
@@ -383,6 +386,11 @@ function toDriveViewUrl(url) {
   return fileId ? `https://drive.google.com/file/d/${fileId}/view?usp=sharing` : url;
 }
 
+function toDriveEmbedUrl(url) {
+  const fileId = extractDriveFileId(url);
+  return fileId ? `https://drive.google.com/file/d/${fileId}/preview` : url;
+}
+
 async function initData() {
   renderAll();
   setDataSourceNote("샘플 데이터 표시 중 · Google Sheets 연결 시도 중");
@@ -487,7 +495,7 @@ function renderIssueSummaryCard(issue) {
       </button>
       <div class="issue-tools">
         <a class="outline-action" href="${issue.pdf}" target="_blank" rel="noreferrer">다운로드</a>
-        <a class="outline-action" href="${issue.previewPdf || issue.pdf}" target="_blank" rel="noreferrer">미리보기</a>
+        <button class="outline-action" type="button" data-preview-pdf="${issue.previewPdf || issue.pdf}" data-preview-title="SRI Weekly 제${issue.volume}호">미리보기</button>
       </div>
     </article>
   `;
@@ -567,7 +575,7 @@ function openArticle(articleId) {
       <p>${article.body}</p>
       <div class="article-pdf-actions">
         <a class="download-link inline-download" href="${article.pdf}" target="_blank" rel="noreferrer">원문 PDF 다운로드</a>
-        <a class="download-link inline-download preview-download" href="${article.previewPdf || article.pdf}" target="_blank" rel="noreferrer">미리보기</a>
+        <button class="download-link inline-download preview-download" type="button" data-preview-pdf="${article.previewPdf || article.pdf}" data-preview-title="${article.title}">미리보기</button>
       </div>
     </div>
     <section class="related-list">
@@ -594,6 +602,16 @@ function openArticle(articleId) {
   }
 
   articleDialog.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function openPdfPreview(url, title) {
+  if (!url) return;
+  pdfPreviewTitle.textContent = title || "PDF 미리보기";
+  pdfPreviewFrame.src = toDriveEmbedUrl(url);
+
+  if (!pdfPreviewDialog.open) {
+    pdfPreviewDialog.showModal();
+  }
 }
 
 function getRelatedArticles(article) {
@@ -672,6 +690,13 @@ searchInput.addEventListener("input", (event) => {
 });
 
 issueList.addEventListener("click", (event) => {
+  const previewButton = event.target.closest("[data-preview-pdf]");
+  if (previewButton) {
+    event.stopPropagation();
+    openPdfPreview(previewButton.dataset.previewPdf, previewButton.dataset.previewTitle);
+    return;
+  }
+
   const backButton = event.target.closest("[data-back-to-issues]");
   if (backButton) {
     state.selectedIssueVolume = null;
@@ -693,6 +718,12 @@ issueList.addEventListener("click", (event) => {
 });
 
 articleDetail.addEventListener("click", (event) => {
+  const previewButton = event.target.closest("[data-preview-pdf]");
+  if (previewButton) {
+    openPdfPreview(previewButton.dataset.previewPdf, previewButton.dataset.previewTitle);
+    return;
+  }
+
   const button = event.target.closest("[data-related-id]");
   if (!button) return;
   openArticle(button.dataset.relatedId);
@@ -700,6 +731,11 @@ articleDetail.addEventListener("click", (event) => {
 
 document.querySelector("#closeDialog").addEventListener("click", () => {
   articleDialog.close();
+});
+
+document.querySelector("#closePdfPreview").addEventListener("click", () => {
+  pdfPreviewDialog.close();
+  pdfPreviewFrame.src = "";
 });
 
 document.querySelector("#openLatestIssue").addEventListener("click", () => {
