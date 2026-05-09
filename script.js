@@ -214,6 +214,8 @@ const DATA_SOURCE = {
   articlesSheet: "articles",
 };
 
+const ARTICLE_CHUNK_SIZE = 120;
+
 let weeklyIssues = fallbackWeeklyIssues;
 let allArticles = buildAllArticles(weeklyIssues);
 
@@ -254,12 +256,12 @@ function unique(items) {
   return [...new Set(items.filter(Boolean))];
 }
 
-function sheetJsonpUrl(sheetName, callbackName) {
-  const query = encodeURIComponent("select *");
-  return `https://docs.google.com/spreadsheets/d/${DATA_SOURCE.spreadsheetId}/gviz/tq?tqx=responseHandler:${callbackName}&sheet=${encodeURIComponent(sheetName)}&tq=${query}`;
+function sheetJsonpUrl(sheetName, callbackName, query = "select *") {
+  const encodedQuery = encodeURIComponent(query);
+  return `https://docs.google.com/spreadsheets/d/${DATA_SOURCE.spreadsheetId}/gviz/tq?tqx=responseHandler:${callbackName}&sheet=${encodeURIComponent(sheetName)}&tq=${encodedQuery}`;
 }
 
-function loadSheetRows(sheetName) {
+function loadSheetRows(sheetName, query = "select *") {
   return new Promise((resolve, reject) => {
     const callbackName = `sriSheetCallback_${sheetName}_${Date.now()}_${Math.random().toString(36).slice(2)}`;
     const script = document.createElement("script");
@@ -288,9 +290,25 @@ function loadSheetRows(sheetName) {
       reject(new Error(`${sheetName} 시트 스크립트 로드에 실패했습니다.`));
     };
 
-    script.src = sheetJsonpUrl(sheetName, callbackName);
+    script.src = sheetJsonpUrl(sheetName, callbackName, query);
     document.head.appendChild(script);
   });
+}
+
+async function loadArticleRows() {
+  const rows = [];
+
+  for (let offset = 0; ; offset += ARTICLE_CHUNK_SIZE) {
+    const chunk = await loadSheetRows(
+      DATA_SOURCE.articlesSheet,
+      `select * limit ${ARTICLE_CHUNK_SIZE} offset ${offset}`,
+    );
+    rows.push(...chunk);
+
+    if (chunk.length < ARTICLE_CHUNK_SIZE) break;
+  }
+
+  return rows;
 }
 
 function tableToObjects(table) {
@@ -310,10 +328,7 @@ function setDataSourceNote(message) {
 }
 
 async function loadWeeklyIssuesFromSheets() {
-  const [issueRows, articleRows] = await Promise.all([
-    loadSheetRows(DATA_SOURCE.issuesSheet),
-    loadSheetRows(DATA_SOURCE.articlesSheet),
-  ]);
+  const [issueRows, articleRows] = await Promise.all([loadSheetRows(DATA_SOURCE.issuesSheet), loadArticleRows()]);
 
   const articlesByIssue = articleRows
     .filter((row) => row.status !== "hidden" && row.issue_no && row.article_title)
@@ -356,7 +371,6 @@ async function loadWeeklyIssuesFromSheets() {
         articles,
       };
     })
-    .filter((issue) => issue.articles.length)
     .sort((a, b) => b.volume - a.volume);
 
   if (!issues.length) {
@@ -432,6 +446,14 @@ function matchesArticle(article) {
 }
 
 function issueMatches(issue) {
+  if (!issue.articles.length) {
+    const topicMatch = state.topic === "전체" || (issue.topics || []).includes(state.topic);
+    const queryMatch =
+      !state.query ||
+      [issue.volume, issue.issueCode, issue.date, issue.title].join(" ").toLowerCase().includes(state.query.toLowerCase());
+    return topicMatch && queryMatch;
+  }
+
   return issue.articles.some(matchesArticle);
 }
 
@@ -484,7 +506,9 @@ function renderIssueSummaryCard(issue) {
   const matchedArticles = issue.articles.filter(matchesArticle);
   const previewArticles = matchedArticles.length ? matchedArticles : issue.articles;
   const topicTags = unique([...(issue.topics || []), ...previewArticles.map((article) => article.topic)]).slice(0, 4);
-  const previewTitles = previewArticles.map((article) => article.title).join(" / ");
+  const previewTitles = previewArticles.length
+    ? previewArticles.map((article) => article.title).join(" / ")
+    : "개별 글 목록 준비 중";
 
   return `
     <article class="issue-summary-card" data-issue-volume="${issue.volume}">
@@ -525,7 +549,11 @@ function renderIssueDetail(volume) {
         </div>
       </div>
       <div class="paper-list">
-        ${articles.map((article, index) => renderPaperItem(article, index)).join("")}
+        ${
+          articles.length
+            ? articles.map((article, index) => renderPaperItem(article, index)).join("")
+            : `<article class="empty-card"><h3>개별 글 목록이 아직 준비되지 않았습니다</h3></article>`
+        }
       </div>
     </article>
   `;
