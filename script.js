@@ -232,7 +232,7 @@ function buildAllArticles(issues) {
       date: issue.date,
       issueTitle: issue.title,
       issuePdf: issue.pdf,
-      pdf: article.pdf || issue.pdf,
+      pdf: article.pdf || "",
     })),
   );
 }
@@ -496,7 +496,7 @@ function renderIssueSummaryCard(issue) {
         <p>수록 글 <strong>${issue.articles.length}편</strong> - ${previewTitles}</p>
       </button>
       <div class="issue-tools">
-        <a class="outline-action" href="${issue.pdf}" target="_blank" rel="noreferrer">다운로드</a>
+        <a class="outline-action" href="${issue.pdf}" target="_blank" rel="noreferrer">전체 PDF 다운로드</a>
         <button class="outline-action" type="button" data-preview-pdf="${issue.previewPdf || issue.pdf}" data-preview-title="SRI Weekly 제${issue.volume}호">미리보기</button>
       </div>
     </article>
@@ -563,6 +563,7 @@ function openArticle(articleId) {
   if (!article) return;
 
   const related = getRelatedArticles(article);
+  const articlePreviewUrl = article.previewPdf || article.pdf;
   articleDetail.innerHTML = `
     <p class="eyebrow">SRI Weekly ${article.volume}호 (${article.issueCode}) | ${formatDate(article.date)}</p>
     <h2>${article.title}</h2>
@@ -576,8 +577,16 @@ function openArticle(articleId) {
       <p>${article.summary}</p>
       <p>${article.body}</p>
       <div class="article-pdf-actions">
-        <a class="download-link inline-download" href="${article.pdf}" target="_blank" rel="noreferrer">원문 PDF 다운로드</a>
-        <button class="download-link inline-download preview-download" type="button" data-preview-pdf="${article.previewPdf || article.pdf}" data-preview-title="${article.title}">미리보기</button>
+        ${
+          article.pdf
+            ? `<a class="download-link inline-download" href="${article.pdf}" target="_blank" rel="noreferrer">개별 PDF 다운로드</a>`
+            : `<span class="download-link inline-download disabled-link">개별 PDF 준비중</span>`
+        }
+        ${
+          articlePreviewUrl
+            ? `<button class="download-link inline-download preview-download" type="button" data-preview-pdf="${articlePreviewUrl}" data-preview-title="${article.title}">미리보기</button>`
+            : ""
+        }
       </div>
     </div>
     <section class="related-list">

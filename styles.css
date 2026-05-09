@@ -740,6 +740,13 @@ input {
   color: var(--blue);
 }
 
+.disabled-link {
+  border-color: #d0d5dd;
+  background: #f2f4f7;
+  color: #667085;
+  cursor: not-allowed;
+}
+
 .read-button {
   border-color: var(--green);
   background: var(--green);
