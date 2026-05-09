@@ -214,7 +214,8 @@ const DATA_SOURCE = {
   articlesSheet: "articles",
 };
 
-const ARTICLE_CHUNK_SIZE = 120;
+const ARTICLE_CHUNK_SIZE = 25;
+const ARTICLE_WEB_QUERY_COLUMNS = "A,C,E,F,G,H,J,K,L,M,N,Q";
 
 let weeklyIssues = fallbackWeeklyIssues;
 let allArticles = buildAllArticles(weeklyIssues);
@@ -258,7 +259,8 @@ function unique(items) {
 
 function sheetJsonpUrl(sheetName, callbackName, query = "select *") {
   const encodedQuery = encodeURIComponent(query);
-  return `https://docs.google.com/spreadsheets/d/${DATA_SOURCE.spreadsheetId}/gviz/tq?tqx=responseHandler:${callbackName}&sheet=${encodeURIComponent(sheetName)}&tq=${encodedQuery}`;
+  const cacheBust = Date.now();
+  return `https://docs.google.com/spreadsheets/d/${DATA_SOURCE.spreadsheetId}/gviz/tq?tqx=responseHandler:${callbackName}&sheet=${encodeURIComponent(sheetName)}&tq=${encodedQuery}&cacheBust=${cacheBust}`;
 }
 
 function loadSheetRows(sheetName, query = "select *") {
@@ -298,17 +300,22 @@ function loadSheetRows(sheetName, query = "select *") {
 async function loadArticleRows() {
   const rows = [];
 
-  for (let offset = 0; ; offset += ARTICLE_CHUNK_SIZE) {
-    const chunk = await loadSheetRows(
-      DATA_SOURCE.articlesSheet,
-      `select * limit ${ARTICLE_CHUNK_SIZE} offset ${offset}`,
-    );
-    rows.push(...chunk);
+  try {
+    for (let offset = 0; ; offset += ARTICLE_CHUNK_SIZE) {
+      const chunk = await loadSheetRows(
+        DATA_SOURCE.articlesSheet,
+        `select ${ARTICLE_WEB_QUERY_COLUMNS} limit ${ARTICLE_CHUNK_SIZE} offset ${offset}`,
+      );
+      rows.push(...chunk);
 
-    if (chunk.length < ARTICLE_CHUNK_SIZE) break;
+      if (chunk.length < ARTICLE_CHUNK_SIZE) break;
+    }
+
+    return rows;
+  } catch (error) {
+    console.info("articles 시트 조각 읽기에 실패해 전체 읽기로 다시 시도합니다.", error);
+    return loadSheetRows(DATA_SOURCE.articlesSheet, `select ${ARTICLE_WEB_QUERY_COLUMNS}`);
   }
-
-  return rows;
 }
 
 function tableToObjects(table) {
