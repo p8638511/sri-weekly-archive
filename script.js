@@ -404,7 +404,7 @@ async function initData() {
     setDataSourceNote("Google Sheets 데이터 연결됨");
     renderAll();
   } catch (error) {
-    setDataSourceNote("샘플 데이터 표시 중 · 시트를 웹에 게시하면 자동 연결됩니다");
+    setDataSourceNote(`샘플 데이터 표시 중 · Google Sheets 연결 실패: ${error.message || "원인 확인 필요"}`);
     console.info("Google Sheets 데이터를 읽지 못해 샘플 데이터로 표시합니다.", error);
   }
 }
