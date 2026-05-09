@@ -247,6 +247,8 @@ const dataSourceNote = document.querySelector("#dataSourceNote");
 const pdfPreviewDialog = document.querySelector("#pdfPreviewDialog");
 const pdfPreviewFrame = document.querySelector("#pdfPreviewFrame");
 const pdfPreviewTitle = document.querySelector("#pdfPreviewTitle");
+const pdfPreviewOpen = document.querySelector("#pdfPreviewOpen");
+const pdfPreviewDownload = document.querySelector("#pdfPreviewDownload");
 
 function unique(items) {
   return [...new Set(items.filter(Boolean))];
@@ -608,6 +610,8 @@ function openPdfPreview(url, title) {
   if (!url) return;
   pdfPreviewTitle.textContent = title || "PDF 미리보기";
   pdfPreviewFrame.src = toDriveEmbedUrl(url);
+  pdfPreviewOpen.href = toDriveViewUrl(url);
+  pdfPreviewDownload.href = url;
 
   if (!pdfPreviewDialog.open) {
     pdfPreviewDialog.showModal();

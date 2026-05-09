@@ -92,8 +92,13 @@
       <article>
         <div class="pdf-preview-head">
           <strong id="pdfPreviewTitle">PDF 미리보기</strong>
+          <div class="pdf-preview-actions">
+            <a id="pdfPreviewOpen" href="#" target="_blank" rel="noreferrer">새 창에서 보기</a>
+            <a id="pdfPreviewDownload" href="#" target="_blank" rel="noreferrer">다운로드</a>
+          </div>
           <button class="close-button" id="closePdfPreview" type="button" aria-label="닫기">×</button>
         </div>
+        <p class="pdf-preview-help">미리보기가 비어 있으면 브라우저가 Google Drive 화면을 차단한 상태입니다. 이때는 새 창에서 보기를 눌러주세요.</p>
         <iframe id="pdfPreviewFrame" title="PDF 미리보기"></iframe>
       </article>
     </dialog>
