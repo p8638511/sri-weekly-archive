@@ -388,16 +388,7 @@ function toDriveViewUrl(url) {
 
 function toDriveEmbedUrl(url) {
   const fileId = extractDriveFileId(url);
-  const fileUrl = fileId ? `https://drive.google.com/uc?export=download&id=${fileId}` : absoluteUrl(url);
-  return `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(fileUrl)}`;
-}
-
-function absoluteUrl(url) {
-  try {
-    return new URL(url, window.location.href).href;
-  } catch {
-    return url;
-  }
+  return fileId ? `https://drive.google.com/file/d/${fileId}/preview` : url;
 }
 
 async function initData() {
